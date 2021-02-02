@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Ownable.sol";
 
 contract Votable is Ownable{
 
@@ -55,12 +55,12 @@ contract Votable is Ownable{
     }
 
     modifier onlyVoters(){
-        require(voters[msg.sender], "Votable: only voter can call");
+        require(voters[_msgSender()], "Votable: only voter can call");
         _;
     }
 
     modifier onlySelf(){
-        require(msg.sender == address(this), "Votable: only self can call");
+        require(_msgSender() == address(this), "Votable: only self can call");
         _;
     }
 
@@ -74,11 +74,11 @@ contract Votable is Ownable{
     // vote
     function voteProposal(uint16 _pid) public onlyVoters proposalExistAndNotDone(_pid){
         Proposal storage proposal = proposals[_pid];
-        require(!proposal.votes[msg.sender], "Votable: duplicate voting is not allowed");
+        require(!proposal.votes[_msgSender()], "Votable: duplicate voting is not allowed");
 
-        proposal.votes[msg.sender] = true;
+        proposal.votes[_msgSender()] = true;
         proposal.count++;
-        emit VoteProposal(_pid, msg.sender);
+        emit VoteProposal(_pid, _msgSender());
 
         // judge
         _judge(proposal);
@@ -97,7 +97,7 @@ contract Votable is Ownable{
     function hasVoted(uint16 _pid) public view returns(bool){
         Proposal storage proposal = proposals[_pid];
         require(proposal.pid == _pid, "Votable: proposal not exists");
-        return proposal.votes[msg.sender];
+        return proposal.votes[_msgSender()];
     }
 
     // translate proposal

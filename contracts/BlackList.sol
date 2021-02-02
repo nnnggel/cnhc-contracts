@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Ownable.sol";
 
 contract BlackList is Ownable{
 

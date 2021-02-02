@@ -3,9 +3,9 @@ CNHC Group Limit (CGL)-issued CNH-collateralized ERC20 stablecoin public smart c
 
 https://www.cnhc.to
 
-The contract can be found [here](https://etherscan.io/address/0xf0952f7d800431a94b22afe53fb0cf1579d7e6d5)
+The contract can be found [here](https://etherscan.io/address/0x9293C7B4B4FB90FB3EE76f7C6189aA841E57E5c0)
 
-The whitepaper can be found [here](https://static.cnhc.to/whitepaper.pdf).
+The whitepaper can be found [here](https://static.cnhc.to/CNHC+WHITEPAPER.pdf).
 
 ## ABI, Address, and Verification
 

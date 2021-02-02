@@ -7,7 +7,6 @@
     "test": "test"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "3.2.0",
     "dotenv": "^8.2.0",
     "ethereumjs-wallet": "^1.0.0",
     "truffle-contract-size": "^2.0.0",

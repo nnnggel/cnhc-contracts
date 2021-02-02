@@ -1,29 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.6.2;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/GSN/Context.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "./Pausable.sol";
 import "./BlackList.sol";
 import "./Votable.sol";
 import "./UpgradedStandardToken.sol";
-import "./ERC20WithFee.sol";
+import "./ERC20WithFeeAndRouter.sol";
 
-contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
+contract CNHCToken is ERC20WithFeeAndRouter, BlackList, Votable, Pausable {
 
     address public upgradedAddress;
 
     bool public deprecated;
 
-    constructor(uint256 _initialSupply, uint8 _decimals) public ERC20WithFee("CNHC Token","CNHC") {
+    constructor(uint256 _initialSupply, uint8 _decimals) public ERC20WithFeeAndRouter("CNHC Token","CNHC") {
         _setupDecimals(_decimals);
         _mint(_msgSender(), _initialSupply);
     }
 
-    event DestroyedBlackFunds(address indexed blackListedUser, uint balance);
+    event DestroyedBlackFunds(address indexed blackListedUser, uint256 balance);
 
     event Deprecate(address newAddress);
-    
+
     // functions users can call
     // make compatible if deprecated
     function balanceOf(address account) public override view returns (uint256) {
@@ -34,7 +32,7 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
         }
     }
 
-    function totalSupply() public override view returns (uint) {
+    function totalSupply() public override view returns (uint256) {
         if (deprecated) {
             return IERC20(upgradedAddress).totalSupply();
         } else {
@@ -42,7 +40,7 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
         }
     }
 
-    function allowance(address owner, address spender) public override view returns (uint remaining) {
+    function allowance(address owner, address spender) public override view returns (uint256 remaining) {
         if (deprecated) {
             return IERC20(upgradedAddress).allowance(owner, spender);
         } else {
@@ -87,7 +85,7 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
             return super.approve(spender, amount);
         }
     }
-    
+
     function increaseAllowance(address spender, uint256 addedValue) public override isNotBlackUser(_msgSender()) returns (bool) {
         require(!isBlackListUser(spender), "BlackList: spender address is in blacklist");
 
@@ -97,10 +95,10 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
             return super.increaseAllowance(spender, addedValue);
         }
     }
-    
+
     function decreaseAllowance(address spender, uint256 subtractedValue) public override isNotBlackUser(_msgSender()) returns (bool) {
         require(!isBlackListUser(spender), "BlackList: spender address is in blacklist");
-        
+
         if (deprecated) {
             return UpgradedStandardToken(upgradedAddress).decreaseApprovalByLegacy(_msgSender(), spender, subtractedValue);
         } else {
@@ -131,8 +129,8 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
 
     function destroyBlackFunds(address _user) public onlySelf {
         require(!deprecated, "CNHCToken: contract was deprecated");
-        require(isBlackListUser(_user), "BlackList: only fund in blacklist address can be destroy");
-        uint dirtyFunds = balanceOf(_user);
+        require(isBlackListUser(_user), "CNHCToken: only fund in blacklist address can be destroy");
+        uint256 dirtyFunds = balanceOf(_user);
         super._burn(_user, dirtyFunds);
         emit DestroyedBlackFunds(_user, dirtyFunds);
     }
@@ -163,4 +161,54 @@ contract CNHCToken is ERC20WithFee, BlackList, Votable, Pausable {
 
         require(!paused(), "Pausable: token transfer while paused");
     }
+
+    function transferByBatch(address[] memory _recipients, uint256[] memory _amounts) public isNotBlackUser(_msgSender()) {
+        if (deprecated) {
+            for(uint256 i=0; i<_recipients.length; i++){
+                if(!isBlackListUser(_recipients[i])){
+                    return UpgradedStandardToken(upgradedAddress).transferByBatchEachByLegacy(_recipients[i], _amounts[i]);
+                }
+            }
+        } else {
+            for(uint256 i=0; i<_recipients.length; i++){
+                if(!isBlackListUser(_recipients[i])){
+                    return super.transferByBatchEach(_recipients[i], _amounts[i]);
+                }
+            }
+        }
+    }
+
+    function transferFromByBatch(address[] memory _senders, address[] memory _recipients, uint256[] memory _amounts) public isNotBlackUser(_msgSender()){
+        if (deprecated) {
+            for(uint256 i=0; i<_senders.length; i++){
+                if(!isBlackListUser(_senders[i]) && !isBlackListUser(_recipients[i])){
+                    UpgradedStandardToken(upgradedAddress).transferFromByBatchEachByLegacy(_msgSender(), _senders[i], _recipients[i], _amounts[i]);
+                }
+            }
+        } else {
+            for(uint256 i=0; i<_senders.length; i++){
+                if(!isBlackListUser(_senders[i]) && !isBlackListUser(_recipients[i])){
+                    super.transferFromByBatchEach(_senders[i], _recipients[i], _amounts[i]);
+                }
+            }
+        }
+    }
+
+    function transferFromByRouter(address[] memory _from,address[] memory _to,uint256[] memory _value,bytes32[] memory _r,bytes32[] memory _s,uint8[] memory _v) public onlyRouter{
+        if (deprecated) {
+            for(uint256 i=0; i<_from.length; i++){
+                if(!isBlackListUser(_from[i]) && !isBlackListUser(_to[i])){
+                    UpgradedStandardToken(upgradedAddress).transferFromByRouterEachByLegacy(_msgSender(), _from[i], _to[i], _value[i],_r[i],_s[i],_v[i]);
+                }
+            }
+        } else {
+            for(uint256 i=0; i<_from.length; i++){
+                if(!isBlackListUser(_from[i]) && !isBlackListUser(_to[i])){
+                    super.transferFromByRouterEach(_from[i], _to[i], _value[i],_r[i],_s[i],_v[i]);
+                }
+            }
+        }
+    }
+
+
 }

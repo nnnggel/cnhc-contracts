@@ -41,9 +41,9 @@ contract('CNHCToken', (accounts) => {
   })
 
   describe('Normal', async()=>{
-    it('transfer should work', () => {
+    it('transfer should work', async() => {
       const transferAmount = 100
-      this.cnhcContract.transfer(accountA, transferAmount).then(async()=>{
+      await this.cnhcContract.transfer(accountA, transferAmount).then(async()=>{
         const balanceOfOwner = await this.cnhcContract.balanceOf(owner)
         const balanceOfAccountA = await this.cnhcContract.balanceOf(accountA)
         assert.equal(balanceOfOwner, initialSupply - transferAmount)
@@ -277,6 +277,7 @@ contract('CNHCToken', (accounts) => {
     it('setFee should work', async()=>{
       const transferAmount = 10000
       await this.cnhcContract.transfer(accountA, transferAmount).then(async()=>{
+        await this.cnhcContract.updateReceivingFeeAddress(owner)
         await this.cnhcContract.setFeeParams(50, 500).then(async()=>{
           const fee = transferAmount * 50 / 10000
           await this.cnhcContract.transfer(accountB, transferAmount, { from: accountA }).then(async()=>{
